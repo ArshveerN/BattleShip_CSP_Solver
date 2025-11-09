@@ -2,40 +2,27 @@ from csp import Constraint, Variable
 
 class Diagonal_constraint(Constraint):
     def __init__(self, name, box_1, box_2):
-        Constraint.__init__(
-            self,
-            name,
-            [box_1, box_2]
-        )
+        super().__init__(name, [box_1, box_2])
 
     def check(self):
-        val_1 = self.scope()[0]
-        val_2 = self.scope()[1]
-        if not val_1.isAssigned or not val_2.isAssigned:
+        v1, v2 = self.scope()
+        if not v1.isAssigned() or not v2.isAssigned():
             return True
-        if val_1.getValue() == val_2.getValue() and val_1.getValue == 1:
-            return False
-        return True
-
+        return not (v1.getValue() == 1 and v2.getValue() == 1)
 
     def hasSupport(self, var, val):
-        val_1 = self.scope()[0]
-        val_2 = self.scope()[1]
-
-        if var not in [val_1, val_2]:
+        if var not in self.scope():
             return True
-
-        if var == val_1:
-            var1 = val_2
-        else:
-            var1 = val_1
-
         if val != 1:
             return True
 
-        for temp_val in var1.curDomain():
-            if temp_val != 1:
+        v1, v2 = self.scope()
+        other = v2 if var is v1 else v1
+        for possible in other.curDomain():
+            if possible != 1:
                 return True
+
+        # no supporting value found
         return False
 
 class TableConstraint(Constraint):

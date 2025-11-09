@@ -91,26 +91,43 @@ def solve_battleship(inputfile: str, outputfile: str):
 
 
     # Add more constraints here
+    def one_index(i, j, size):
+        return str(-1 - (i * size + j))
+
     for i in range(1, size - 1):
         for j in range(1, size - 1):
-            main_box = varn[str(-1 - (i * size + j))]
-            b_left = varn[str((i - 1) * size + j + 1)]
-            b_right = varn[str((i + 1) * size + j + 1)]
 
-            conslist.append(
-                Diagonal_constraint(
-                    f"Diagonal Check",
-                    main_box,
-                    b_left
-                )
+            main_box = varn[str(-1 - (i * size + j))]
+            for di, dj in [(-1, -1), (1, 1)]:
+                ni, nj = i + di, j + dj
+                if 1 <= ni <= size - 2 and 1 <= nj <= size - 2:
+                    neighbor = varn[str(-1 - (ni * size + nj))]
+                    conslist.append(
+                        Diagonal_constraint(
+                            f"Diagonal_Check_{i}_{j}_to_{ni}_{nj}",
+                            main_box,
+                            neighbor
+                        )
+                    )
+
+
+    for i in range(3, size - 1):
+        line_var = []
+        for j in range(1, size - 1):
+            var = varn[str(-1 - (i * size + j))]
+            line_var.append(var)
+
+        count = b2[i - 3]
+
+        conslist.append(
+            NValuesConstraint(
+                f"NValues Check row {i - 3}",
+                line_var,
+                [1],
+                count,
+                count
             )
-            conslist.append(
-                Diagonal_constraint(
-                    f"Diagonal Check",
-                    main_box,
-                    b_right
-                )
-            )
+        )
 
 
 
