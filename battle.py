@@ -129,6 +129,27 @@ def solve_battleship(inputfile: str, outputfile: str):
             )
         )
 
+    for j in range(1, size - 1):
+        line_var = []
+        for i in range(3, size - 1):
+            var = varn[str(-1 - (i * size + j))]
+            line_var.append(var)
+
+        count = b[j - 1]
+
+        conslist.append(
+            NValuesConstraint(
+                f"NValues Check col {j - 1}",
+                line_var,
+                [1],
+                count,
+                count
+            )
+        )
+
+
+    sub_count, dest_count, cru_count, battle_count = b3
+
 
 
     # find all solutions and check which one has right ship #'s

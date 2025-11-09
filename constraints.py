@@ -1,5 +1,10 @@
 from csp import Constraint, Variable
 
+
+class Ship_count_constrain(Constraint):
+    def __init__(self, name, scope):
+        super().__init__(name, scope)
+
 class Diagonal_constraint(Constraint):
     def __init__(self, name, box_1, box_2):
         super().__init__(name, [box_1, box_2])
