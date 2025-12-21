@@ -1,5 +1,6 @@
 import sys
 
+
 class Variable:
     '''Class for defining CSP variables.
 
@@ -14,15 +15,16 @@ class Variable:
       domain. Values can be also restored.
     '''
 
-    undoDict = dict()             #stores pruned values indexed by a
-                                        #(variable,value) reason pair
+    undoDict = dict()  # stores pruned values indexed by a
+
+    # (variable,value) reason pair
     def __init__(self, name, domain):
         '''Create a variable object, specifying its name (a
         string) and domain of values.
         '''
-        self._name = name                #text name for variable
-        self._dom = list(domain)         #Make a copy of passed domain
-        self._curdom = list(domain)      #using list
+        self._name = name  # text name for variable
+        self._dom = list(domain)  # Make a copy of passed domain
+        self._curdom = list(domain)  # using list
         self._value = None
 
     def __str__(self):
@@ -30,11 +32,11 @@ class Variable:
 
     def domain(self):
         '''return copy of variable domain'''
-        return(list(self._dom))
+        return (list(self._dom))
 
     def domainSize(self):
         '''Return the size of the domain'''
-        return(len(self.domain()))
+        return (len(self.domain()))
 
     def resetDomain(self, newdomain):
         '''reset the domain of this variable'''
@@ -45,9 +47,10 @@ class Variable:
 
     def setValue(self, value):
         if value != None and not value in self._dom:
-            print("Error: tried to assign value {} to variable {} that is not in {}'s domain".format(value,self._name,self._name))
+            print("Error: tried to assign value {} to variable {} that is not in {}'s domain".format(value, self._name,
+                                                                                                     self._name))
         else:
-            self._value = value    
+            self._value = value
 
     def unAssign(self):
         self.setValue(None)
@@ -62,27 +65,28 @@ class Variable:
         '''return copy of variable current domain. But if variable is assigned
            return just its assigned value (this makes implementing hasSupport easier'''
         if self.isAssigned():
-            return([self.getValue()])
-        return(list(self._curdom))
+            return ([self.getValue()])
+        return (list(self._curdom))
 
     def curDomainSize(self):
         '''Return the size of the current domain'''
         if self.isAssigned():
-            return(1)
-        return(len(self._curdom))
+            return (1)
+        return (len(self._curdom))
 
     def inCurDomain(self, value):
         '''check if value is in current domain'''
         if self.isAssigned():
-            return(value==self.getValue())
-        return(value in self._curdom)
+            return (value == self.getValue())
+        return (value in self._curdom)
 
     def pruneValue(self, value, reasonVar, reasonVal):
         '''Remove value from current domain'''
         try:
             self._curdom.remove(value)
         except:
-            print("Error: tried to prune value {} from variable {}'s domain, but value not present!".format(value, self._name))
+            print("Error: tried to prune value {} from variable {}'s domain, but value not present!".format(value,
+                                                                                                            self._name))
         dkey = (reasonVar, reasonVal)
         if not dkey in Variable.undoDict:
             Variable.undoDict[dkey] = []
@@ -109,13 +113,12 @@ class Variable:
     def restoreValues(reasonVar, reasonVal):
         dkey = (reasonVar, reasonVal)
         if dkey in Variable.undoDict:
-            for (var,val) in Variable.undoDict[dkey]:
+            for (var, val) in Variable.undoDict[dkey]:
                 var.restoreVal(val)
             del Variable.undoDict[dkey]
 
 
-
-#implement various types of constraints
+# implement various types of constraints
 class Constraint:
     '''Base class for defining constraints. Each constraint can check if
        it has been satisfied, so each type of constraint must be a
@@ -132,12 +135,13 @@ class Constraint:
        the constraint greaterThan(V1,V2) is not the same as the
        contraint greaterThan(V2,V1).
     '''
+
     def __init__(self, name, scope):
         '''create a constraint object, specify the constraint name (a
         string) and its scope (an ORDERED list of variable
         objects).'''
         self._scope = list(scope)
-        self._name = "baseClass_" + name  #override in subconstraint types!
+        self._name = "baseClass_" + name  # override in subconstraint types!
 
     def scope(self):
         return list(self._scope)
@@ -169,7 +173,7 @@ class Constraint:
             self.name(), [v.name() for v in self.scope()]))
 
 
-#object for holding a constraint problem
+# object for holding a constraint problem
 class CSP:
     '''CSP class groups together a set of variables and a set of
        constraints to form a CSP problem. Provides a usesful place
@@ -183,7 +187,7 @@ class CSP:
         self._variables = variables
         self._constraints = constraints
 
-        #some sanity checks
+        # some sanity checks
         varsInCnst = set()
         for c in constraints:
             varsInCnst = varsInCnst.union(c.scope())
@@ -192,7 +196,9 @@ class CSP:
                 print("Warning: variable {} is not in any constraint of the CSP {}".format(v.name(), self.name()))
         for v in varsInCnst:
             if v not in variables:
-                print("Error: variable {} appears in constraint but specified as one of the variables of the CSP {}".format(v.name(), self.name()))
+                print(
+                    "Error: variable {} appears in constraint but specified as one of the variables of the CSP {}".format(
+                        v.name(), self.name()))
 
         self.constraints_of = [[] for i in range(len(variables))]
         for c in constraints:
@@ -227,7 +233,7 @@ class CSP:
            if these satisfy all the constraints. Return list of
            erroneous solutions'''
 
-        #save values to restore later
+        # save values to restore later
         current_values = [(var, var.getValue()) for var in self.variables()]
         errs = []
 
@@ -258,6 +264,6 @@ class CSP:
             var.setValue(val)
 
         return errs
-    
+
     def __str__(self):
         return "CSP {}".format(self.name())
