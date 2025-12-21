@@ -1,35 +1,6 @@
 from csp import Constraint, Variable
 
 
-class Ship_count_constrain(Constraint):
-    def __init__(self, name, scope):
-        super().__init__(name, scope)
-
-class Diagonal_constraint(Constraint):
-    def __init__(self, name, box_1, box_2):
-        super().__init__(name, [box_1, box_2])
-
-    def check(self):
-        v1, v2 = self.scope()
-        if not v1.isAssigned() or not v2.isAssigned():
-            return True
-        return not (v1.getValue() == 1 and v2.getValue() == 1)
-
-    def hasSupport(self, var, val):
-        if var not in self.scope():
-            return True
-        if val != 1:
-            return True
-
-        v1, v2 = self.scope()
-        other = v2 if var is v1 else v1
-        for possible in other.curDomain():
-            if possible != 1:
-                return True
-
-        # no supporting value found
-        return False
-
 class TableConstraint(Constraint):
     '''General type of constraint that can be use to implement any type of
        constraint. But might require a lot of space to do so.
@@ -162,7 +133,6 @@ class NValuesConstraint(Constraint):
 
     '''
 
-
     def __init__(self, name, scope, required_values, lower_bound, upper_bound):
         Constraint.__init__(self, name, scope)
         self._name = "NValues_" + name
@@ -179,13 +149,10 @@ class NValuesConstraint(Constraint):
                 return True
         rv_count = 0
 
-        # print "Checking {} with assignments = {}".format(self.name(), assignments)
 
         for v in assignments:
             if v in self._required:
                 rv_count += 1
-
-        # print "rv_count = {} test = {}".format(rv_count, self._lb <= rv_count and self._ub >= rv_count)
 
         return self._lb <= rv_count and self._ub >= rv_count
 
@@ -198,9 +165,8 @@ class NValuesConstraint(Constraint):
                  there are other ways as well)
         '''
         if var not in self.scope():
-            return True  # var=val has support on any constraint it does not participate in
+            return True
 
-        # define the test functions for findvals
         def valsOK(l):
             '''tests a list of assignments which are pairs (var,val)
                to see if they can satisfy this sum constraint'''
@@ -220,34 +186,75 @@ class NValuesConstraint(Constraint):
 
 
 class IfAllThenOneConstraint(Constraint):
-    '''if each variable in left_side equals each value in left_values 
-    then one of the variables in right side has to equal one of the values in right_values. 
-    hasSupport tested only, check() untested.'''
 
     def __init__(self, name, left_side, right_side, left_values, right_values):
-        Constraint.__init__(self, name, left_side + right_side)
+        super().__init__(name, left_side + right_side)
         self._name = "IfAllThenOne_" + name
         self._ls = left_side
         self._rs = right_side
         self._lv = left_values
         self._rv = right_values
 
-    def check(self):
-        assignments = set()
-        for left_var in self._ls:
-            if left_var.isAssigned():
-                val = left_var.getValue()
-                assignments.add(val)
+
+    def hasSupport(self, var, val):
+        if var not in self.scope():
+            return True
+
+        if var in self._ls and val not in self._lv:
+            return True
+
+        if var in self._rs and val in self._rv:
+            return True
+
+        lis = []
+        for v in self.scope():
+            if v != var and not v.isAssigned():
+                lis.append(v)
+
+        return findvals(lis, [(var, val)],
+                        self.valsOK, self.valsOK)
+
+    def valsOK(self, assignments):
+        assign = {}
+        for cont in assignments:
+            v = cont[0]
+            val = cont[1]
+            assign[v] = val
+
+        bool_check1 = True
+        for v in self._ls:
+            if v not in assign and not v.isAssigned():
+                bool_check1 = False
+                break
+
+        bool_check = True
+        for v in self._ls:
+            if v in assign:
+                value = assign[v]
+            elif v.isAssigned():
+                value = v.getValue()
             else:
+                value = None
+
+            if value not in self._lv:
+                bool_check = False
+                break
+
+        if not bool_check1 or not bool_check:
+            return True
+
+        for v in self._rs:
+            if v in assign:
+                val_v = assign[v]
+            elif v.isAssigned():
+                val_v = v.getValue()
+            else:
+                val_v = None
+
+            if val_v is None:
                 return True
-        if len(assignments) != len(self._ls):
-            return False
 
-        for right_var in self._rv:
-            if right_var.isAssigned():
-                val = right_var.getValue()
-                if val in self._rv:
-                    return False
+            if val_v in self._rv:
+                return True
 
-
-
+        return False
