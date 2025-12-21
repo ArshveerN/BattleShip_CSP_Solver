@@ -86,8 +86,9 @@ def bt_search(algo, csp, variableHeuristic, allSolutions, trace):
     if algo == 'BT':
         solutions = BT(uv, csp, allSolutions, trace)
     elif algo == 'GAC':
-        # Call your GAC function here
-        pass
+        if not GAC(csp, 0, 0):
+            return [], bt_search.nodesExplored
+        solutions = GAC_HELPER(uv, csp, allSolutions, trace)
     else:
         print("ERROR: Unrecognized algo given to bt_search.")
         return
@@ -137,6 +138,80 @@ def BT(unAssignedVars, csp, allSolutions, trace):
             if len(solns) > 0 and not allSolutions:
                 break  # don't bother with other values of nxtvar
                 # as we found a soln.
+    nxtvar.unAssign()
+    unAssignedVars.insert(nxtvar)
+    return solns
+
+
+def GAC(csp, assignedVar, assignedVal=None):
+    if assignedVal == 0:
+        assignedVal = None
+    queue = []
+    if assignedVar == 0:
+        for cons in csp.constraints():
+            queue.append(cons)
+    else:
+        for cons in csp.constraintsOf(assignedVar):
+            queue.append(cons)
+
+    while queue:
+        constraint = queue.pop(0)
+
+        for var in constraint.scope():
+            if var.isAssigned():
+                continue
+
+            values_to_prune = []
+            for val in var.curDomain():
+                if not constraint.hasSupport(var, val):
+                    values_to_prune.append(val)
+
+            for val in values_to_prune:
+                var.pruneValue(val, assignedVar, assignedVal)
+
+            if var.curDomainSize() == 0:
+                return False
+
+            if values_to_prune:
+                for related_constraint in csp.constraintsOf(var):
+                    if related_constraint not in queue:
+                        queue.append(related_constraint)
+
+    return True
+
+
+def GAC_HELPER(unAssignedVars, csp, allSolutions, trace):
+    if unAssignedVars.empty():
+        if trace: print("{} Solution Found ************************".format(csp.name()))
+        soln = []
+        for v in csp.variables():
+            soln.append((v, v.getValue()))
+        return [soln]
+
+    bt_search.nodesExplored += 1
+    solns = []
+    nxtvar = unAssignedVars.extract()
+
+    if trace: pass
+
+    for val in nxtvar.curDomain():
+        if trace: pass
+        nxtvar.setValue(val)
+
+        if GAC(csp, nxtvar, val):
+            new_solns = GAC_HELPER(unAssignedVars, csp, allSolutions, trace)
+
+            if new_solns is not None and len(new_solns) > 0:
+                solns.extend(new_solns)
+
+                if not allSolutions:
+                    Variable.restoreValues(nxtvar, val)
+                    nxtvar.unAssign()
+                    unAssignedVars.insert(nxtvar)
+                    return solns
+
+        Variable.restoreValues(nxtvar, val)
+
     nxtvar.unAssign()
     unAssignedVars.insert(nxtvar)
     return solns
