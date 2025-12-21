@@ -4,7 +4,7 @@ from backtracking import bt_search
 import sys
 import argparse
 
-my_utorid = "nagraar3"
+my_utorid = ""
 
 
 def print_solution(s, size):
